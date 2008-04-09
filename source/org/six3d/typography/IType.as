@@ -1,0 +1,1 @@
+package org.six3d.typography {	/**	 * @author Robert Sköld, bob@six3d.org	 */	public interface IType {		function getWidth( char : String , kern : String = null ) : Number;		function getHeight() : Number;		function getMotif( char : String ) : Array;		function initialized() : Boolean;	}}

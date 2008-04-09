@@ -1,0 +1,1 @@
+package org.six3d.typography {	import flash.events.IEventDispatcher;	import flash.net.URLRequest;		import org.six3d.typography.IType;			/**	 * @author Robert Sköld, bob@six3d.org	 */	public interface ILoadableType extends IType, IEventDispatcher {		function load( request : URLRequest = null ) : void;	}}

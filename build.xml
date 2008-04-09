@@ -1,0 +1,123 @@
+<?xml version="1.0"?> 
+<project name="Build six3d" basedir="." default="Input"> 
+	<property file="${basedir}/build.properties" />
+	<property name="linked" value=""/>
+	<property name="url" value="http://localhost/~${user.name}/six3d/" />
+	
+	<!-- Enter compilation targets here -->
+
+	<target name="Basic">
+		<antcall target="compileAndLaunch">
+			<param name="target" value="org/six3d/examples/basic/Basic.as" />
+			<param name="output" value="basic.swf" />
+		</antcall>
+	</target>
+
+	<target name="News">
+		<property name="linked" value="-sp '/Users/slaskis/Projects/Libraries/as3corelib/src' -sp '/Users/slaskis/Projects/Libraries/as3syndicationlib/src'"/>
+		<antcall target="compileAndLaunch">
+			<param name="target" value="org/six3d/examples/news/NewsReader.as" />
+			<param name="output" value="news.swf" />
+		</antcall>
+	</target>
+
+	<target name="Input">
+		<antcall target="compileAndLaunch">
+			<param name="target" value="org/six3d/examples/type/InputExample.as" />
+			<param name="output" value="input.swf" />
+		</antcall>
+	</target>
+	
+
+	<!-- Don't change too much below this line, this is where the magic happens -->
+	
+	<target name="compileAndLaunch">
+		<antcall target="compile">
+			<param name="target" value="${target}" />
+			<param name="output" value="${output}" />
+		</antcall>
+		<antcall target="serverLaunch">
+			<param name="output" value="${output}" />
+		</antcall>
+	</target>
+	
+	<target name="compile">
+		<!-- Needs two arguments, target and output -->
+		<fail unless="target">No main target class set.</fail>
+		<fail unless="output">No main output set.</fail>
+        <exec executable="${mxmlc}">
+			<arg line="-source-path '${classesdir}'" />
+			<arg line="${linked}" />
+			<arg line="-library-path '${flex3libsdir}'" />
+			<arg line="-library-path '${flex3localedir}'" />
+			<arg line="-default-frame-rate=${framerate}" />
+			<arg line="-default-background-color=${bgcolor}" />
+			<arg line="-default-size ${width} ${height}" />
+			<arg line="-strict=true" />
+			<arg line="'${classesdir}/${target}'" />
+			<arg line="-output '${deploydir}/${output}'"/>
+		</exec>
+	</target>
+
+	<target name="playerLaunch">
+		<!-- Needs one arguments, output -->
+		<fail unless="output">No main output set.</fail>
+		<exec executable="open">
+			<arg line="-a ${flashplayer} '${deploydir}/${output}'" />
+		</exec>
+	</target>
+
+	<target name="serverLaunch">
+		<!-- Needs one arguments, output -->
+		<fail unless="output">No main output set.</fail>
+		<exec executable="open">
+			<arg line="-a ${browser} '${url}/${output}'" />
+		</exec>
+	</target>
+	
+	<target name="generateDocs">
+		<delete includeemptydirs="true">
+			<fileset dir="${docsdir}" includes="**/*" />
+		</delete>
+		<!-- Temporarily move the examples (we don't want them in the docs, they only make errors) -->
+  		<move file="${classesdir}/org/six3d/examples" tofile="${basedir}/temp"/>
+		<exec executable="${asdoc}">
+			<arg line="-doc-sources '${classesdir}' -source-path '${classesdir}' -output '${docsdir}' -main-title 'six3D API' -window-title 'six3D API'" />
+		</exec>
+		<!-- Move the examples back -->
+  		<move file="${basedir}/temp" tofile="${classesdir}/org/six3d/examples"/>
+	</target>
+	
+	<!-- TODO The package target -->
+	<target name="package" depends="generateDocs">
+		<propertyfile file="${basedir}/deploy.properties">
+			<entry key="build.number" type="int" default="0000" operation="+" pattern="0000"/>
+			<entry key="build.time" type="date" value="now" pattern="yyyy-MM-dd_HH:mm"/>
+		</propertyfile>
+		<property file="${basedir}/deploy.properties" />
+		<copy overwrite="true" todir="${deploydir}">
+			<fileset dir="${basedir}">
+				<exclude name="**/.settings/**" />
+				<exclude name="**/*.as3_classpath"/>
+				<exclude name="**/*.project"/>
+				<exclude name="**/.svn/**" />
+			</fileset>
+		</copy>
+		<zip file="${basedir}/${build.time}">
+			<fileset dir="${deploydir}">
+				<include name="**/**" />
+			</fileset>
+		</zip>
+	</target>
+
+	<!-- TODO The upload target -->
+	<target name="upload" depends="package">
+		<ftp action="mkdir" server="${ftp.server}" userid="${ftp.username}" password="${ftp.password}" remotedir="${ftp.directory}" />
+		<ftp server="${ftp.server}" userid="${ftp.username}" password="${ftp.password}" remotedir="${ftp.directory}" passive="yes">
+			<fileset dir="${deploydir}">
+				<include name="**/**"/>
+		    </fileset>
+		  </ftp>
+	</target>
+	
+</project> 
